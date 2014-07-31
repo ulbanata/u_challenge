@@ -5,7 +5,7 @@ class Brand < ActiveRecord::Base
   def self.create_brand(data)
     if data[:name]
       brand = Brand.find_by(name: data[:name])
-      return brand if brand
+      return brand if brand # Single db call
       Brand.create(
         name: data[:name]
         )

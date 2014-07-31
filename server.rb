@@ -1,5 +1,6 @@
 require 'sinatra'
 require 'active_record'
+require 'pry-debugger'
 
 db = URI.parse('postgres://localhost/umbelapp')
 
@@ -21,25 +22,25 @@ get '/' do
 end
 
 get '/profile' do
-
+  "Profiles"
 end
 
 post '/profile' do
-  Profile.create_profile.to_json
+  RequestHandler.create_profile(JSON.parse(request.body.read)).to_json(:include => :brands)
 end
 
 get '/profile/:id' do
-  Profile.find(params[:id]).brands.to_json
+  Profile.find(params[:id]).brands.to_json(:include => :brands)
 end
 
 put '/profile/:id' do
-
+  RequestHandler.update_profile(JSON.parse(request.body.read), params[:id]).to_json(:include => :brands)
 end
 
 get '/brand' do
-
+  "Brands"
 end
 
 get '/brand/:id' do
-  Brand.find(params[:id]).profiles.to_json
+  Brand.find(params[:id]).to_json(:include => :profiles)
 end
