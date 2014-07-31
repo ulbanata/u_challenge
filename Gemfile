@@ -7,3 +7,6 @@ gem 'pry-debugger'
 gem 'pg'
 gem 'sinatra-activerecord'
 gem 'activerecord'
+
+gem 'memcache-client'
+gem 'dalli'

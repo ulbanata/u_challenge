@@ -1,7 +1,9 @@
 require 'sinatra'
 require 'active_record'
 require 'pry-debugger'
+require 'dalli'
 
+# DB Config
 db = URI.parse('postgres://localhost/umbelapp')
 
 ActiveRecord::Base.establish_connection(
@@ -26,15 +28,15 @@ get '/profile' do
 end
 
 post '/profile' do
-  RequestHandler.create_profile(JSON.parse(request.body.read)).to_json(:include => :brands)
+  RequestHandler.create_profile(JSON.parse(request.body.read))
 end
 
 get '/profile/:id' do
-  Profile.find(params[:id]).brands.to_json(:include => :brands)
+  RequestHandler.grab_profile(params[:id])
 end
 
 put '/profile/:id' do
-  RequestHandler.update_profile(JSON.parse(request.body.read), params[:id]).to_json(:include => :brands)
+  RequestHandler.update_profile(JSON.parse(request.body.read), params[:id])
 end
 
 get '/brand' do
@@ -42,5 +44,5 @@ get '/brand' do
 end
 
 get '/brand/:id' do
-  Brand.find(params[:id]).to_json(:include => :profiles)
+  RequestHandler.grab_brand(params[:id])
 end

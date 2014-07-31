@@ -1,19 +1,35 @@
 class RequestHandler
+
+  options = { :namespace => "app_v1", :compress => true }
+  @@dc = Dalli::Client.new('localhost:11211', options)
+
+  def self.grab_profile(id)
+    @@dc.fetch(["profile", id]) { Profile.find(id).to_json(:include => :brands) }
+  end
+
   def self.create_profile(data)
     new_profile = Profile.create_profile
     self.connect_brands(data["add"], new_profile) if data["add"]
-    binding.pry
-    new_profile
-  end
-
-  def self.create_brand(name)
-    Brand.create_brand({name: name})
+    reset_profile_cache(id)
+    self.grab_profile(id)
   end
 
   def self.update_profile(data, id)
     profile = Profile.find_by(id: id)
     self.connect_brands(data["add"], profile) if data["add"]
     self.disconnect_brands(data["remove"], profile) if data["remove"]
+    reset_profile_cache(id)
+    self.grab_profile(id)
+  end
+
+  def self.grab_brand(id)
+    @@dc.fetch(["brand", id]) { Brand.find(id).to_json(:include => :profiles) }
+  end
+
+  def self.create_brand(name)
+    brand = Brand.create_brand({name: name})
+    self.reset_brand_cache(brand['id'])
+    brand
   end
 
   private
@@ -24,9 +40,8 @@ class RequestHandler
         if !brand['id']
           brand['id'] = self.create_brand(brand['name']).id
         end
-        p profile
-        p brand
         profile.connect_brand(brand['id'])
+        self.reset_brand_cache(brand['id'])
       end
     end
   end
@@ -38,7 +53,16 @@ class RequestHandler
           brand['id'] = self.create_brand(brand['name']).id
         end
         profile.disconnect_brand(brand['id'])
+        self.reset_brand_cache(brand['id'])
       end
     end
+  end
+
+  def self.reset_profile_cache(id)
+    @@dc.set(["profile", id], Profile.find(id).to_json(:include => :brands) )
+  end
+
+  def self.reset_brand_cache(id)
+    @@dc.set(["brand", id], Brand.find(id).to_json(:include => :profiles))
   end
 end
